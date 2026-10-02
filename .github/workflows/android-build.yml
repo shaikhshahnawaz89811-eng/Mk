@@ -23,7 +23,38 @@ jobs:
           java-version: 17
 
       - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
+        uses: android-actions/setup-android@v4
+        with:
+          # Keep license acceptance non-interactive and handle it explicitly below.
+          # This avoids the setup action hanging/failing when sdkmanager prompts.
+          accept-android-sdk-licenses: false
+          log-accepted-android-sdk-licenses: false
+          packages: ''
+
+      - name: Accept Android SDK licenses non-interactively
+        shell: bash
+        run: |
+          set -euo pipefail
+          yes | sdkmanager --licenses >/tmp/android-sdk-licenses.log 2>&1 || {
+            cat /tmp/android-sdk-licenses.log
+            exit 1
+          }
+
+      - name: Install exact Android SDK packages
+        shell: bash
+        run: |
+          set -euo pipefail
+          sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0"
+
+      - name: Verify Android SDK toolchain
+        shell: bash
+        run: |
+          set -euo pipefail
+          java -version
+          sdkmanager --version
+          adb version
+          test -d "$ANDROID_SDK_ROOT/platforms/android-34"
+          test -x "$ANDROID_SDK_ROOT/build-tools/34.0.0/aapt2"
 
       - name: Grant Gradle wrapper permission
         run: chmod +x gradlew

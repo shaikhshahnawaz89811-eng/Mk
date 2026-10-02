@@ -444,6 +444,14 @@ A raw `kotlinc` source pass cannot be a complete Android build because AndroidX,
 - `[x]` the one independent Builders signature error was fixed and rechecked.
 - `[~]` unresolved Android/third-party symbols are expected from the dependency-free JVM invocation and are not treated as successful Android compilation.
 
+### P27 — GitHub Actions Android SDK license prompt / setup failure
+- **Before:** `[x]` Failure confirmed from CI log: `android-actions/setup-android@v3` reached `sdkmanager --licenses` and stopped at an interactive prompt with `6 of 7 SDK package licenses not accepted`.
+- **After:** `[x]` Workflow now uses `android-actions/setup-android@v4`; its automatic license acceptance is disabled so the workflow controls the input explicitly.
+- **Fix:** `yes | sdkmanager --licenses` accepts licenses non-interactively, then the exact required SDK packages (`platform-tools`, `platforms;android-34`, `build-tools;34.0.0`) are installed explicitly.
+- **Additional guard:** `[x]` a toolchain verification step checks Java, `sdkmanager`, `adb`, Android 34 platform and `aapt2` before Gradle starts.
+- **Why this fixes the observed failure:** the CI job no longer depends on an interactive `sdkmanager --licenses` prompt. The current `setup-android` action documents explicit license controls and v4 is the current action line.
+- **Remote CI verification:** `[~]` requires the workflow to be pushed/run on GitHub; this environment cannot execute GitHub-hosted Actions.
+
 ## Android Gradle verification
 
 Attempted:
