@@ -45,7 +45,7 @@ object IntentRouter {
     // typo/spacing tolerant normalization (Hinglish friendly)
     fun normalize(raw: String): String {
         var t = raw.lowercase().trim()
-        t = t.replace(Regex("[^\\p{L}\\p{N}+/._ -]"), " ")
+        t = t.replace(Regex("[^\\p{L}\\p{M}\\p{N}+/._ -]"), " ")
         t = t.replace(Regex("\\s+"), " ")
         // common typo/variant fixes
         val fixes = mapOf(
