@@ -1,0 +1,257 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:fitsSystemWindows="true"
+    android:background="@drawable/bg_root">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingStart="8dp"
+        android:paddingEnd="10dp">
+
+        <ImageButton
+            android:id="@+id/btnBack"
+            android:layout_width="38dp"
+            android:layout_height="38dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_back"
+            android:padding="8dp"
+            app:tint="@color/text2"
+            android:contentDescription="Back" />
+
+        <FrameLayout
+            android:layout_width="34dp"
+            android:layout_height="34dp"
+            android:background="@drawable/avatar_circle">
+
+            <ImageView
+                android:id="@+id/iconProject"
+                android:layout_width="15dp"
+                android:layout_height="15dp"
+                android:layout_gravity="center"
+                android:src="@drawable/ic_cube"
+                app:tint="@color/accent" />
+        </FrameLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginStart="10dp">
+
+            <TextView
+                android:id="@+id/textName"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="My Awesome Project"
+                android:textColor="@color/text1"
+                android:textSize="14.5sp"
+                android:textStyle="bold"
+                android:maxLines="1"
+                android:ellipsize="end" />
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/active_badge"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp"
+            android:paddingTop="3dp"
+            android:paddingBottom="3dp"
+            android:text="Active"
+            android:textColor="@color/success"
+            android:textSize="10.5sp" />
+
+        <ImageButton
+            android:id="@+id/btnMore"
+            android:layout_width="38dp"
+            android:layout_height="38dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_more"
+            android:padding="8dp"
+            app:tint="@color/text2"
+            android:contentDescription="More" />
+    </LinearLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="0.5dp"
+        android:background="@drawable/divider" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingStart="14dp"
+        android:paddingEnd="14dp"
+        android:paddingTop="10dp"
+        android:paddingBottom="10dp">
+
+        <TextView
+            android:id="@+id/tabChats"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="36dp"
+            android:gravity="center"
+            android:text="Chats"
+            android:textColor="@color/text1"
+            android:textSize="12.5sp"
+            android:background="@drawable/tab_selected" />
+
+        <TextView
+            android:id="@+id/tabFiles"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="36dp"
+            android:gravity="center"
+            android:text="Files"
+            android:textColor="@color/text3"
+            android:textSize="12.5sp" />
+
+        <TextView
+            android:id="@+id/tabInstructions"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="36dp"
+            android:gravity="center"
+            android:text="Instructions"
+            android:textColor="@color/text3"
+            android:textSize="12.5sp" />
+
+        <TextView
+            android:id="@+id/tabCode"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="36dp"
+            android:gravity="center"
+            android:text="Code"
+            android:textColor="@color/text3"
+            android:textSize="12.5sp" />
+    </LinearLayout>
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recyclerTab"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:paddingStart="14dp"
+            android:paddingEnd="14dp"
+            android:clipToPadding="false"
+            android:visibility="gone" />
+
+        <LinearLayout
+            android:id="@+id/welcomeState"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:padding="28dp">
+
+            <FrameLayout
+                android:layout_width="110dp"
+                android:layout_height="110dp"
+                android:background="@drawable/glow_logo">
+
+                <ImageView
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
+                    android:layout_gravity="center"
+                    android:src="@drawable/ic_code"
+                    app:tint="#FFE3F2FF" />
+            </FrameLayout>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="22dp"
+                android:text="Welcome to your project"
+                android:textColor="@color/text1"
+                android:textSize="17sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:gravity="center"
+                android:text="Create a new chat, add files, or write\ninstructions to get started."
+                android:textColor="@color/text2"
+                android:textSize="12.5sp"
+                android:lineSpacingMultiplier="1.2" />
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/btnNewChat"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/glass_chip"
+                    android:paddingStart="13dp"
+                    android:paddingEnd="13dp"
+                    android:paddingTop="9dp"
+                    android:paddingBottom="9dp"
+                    android:text="New Chat"
+                    android:textColor="@color/text1"
+                    android:textSize="12sp"
+                    android:drawablePadding="6dp"
+                    android:drawableStart="@drawable/ic_chat"
+                    android:drawableTint="@color/accent" />
+
+                <TextView
+                    android:id="@+id/btnUploadFile"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:background="@drawable/glass_chip"
+                    android:paddingStart="13dp"
+                    android:paddingEnd="13dp"
+                    android:paddingTop="9dp"
+                    android:paddingBottom="9dp"
+                    android:text="Upload File"
+                    android:textColor="@color/text1"
+                    android:textSize="12sp"
+                    android:drawablePadding="6dp"
+                    android:drawableStart="@drawable/ic_upload"
+                    android:drawableTint="@color/accent" />
+
+                <TextView
+                    android:id="@+id/btnAddInstruction"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:background="@drawable/glass_chip"
+                    android:paddingStart="13dp"
+                    android:paddingEnd="13dp"
+                    android:paddingTop="9dp"
+                    android:paddingBottom="9dp"
+                    android:text="Instruction"
+                    android:textColor="@color/text1"
+                    android:textSize="12sp"
+                    android:drawablePadding="6dp"
+                    android:drawableStart="@drawable/ic_edit"
+                    android:drawableTint="@color/accent" />
+            </LinearLayout>
+        </LinearLayout>
+    </FrameLayout>
+
+    <include
+        android:id="@+id/composer"
+        layout="@layout/view_composer" />
+
+</LinearLayout>

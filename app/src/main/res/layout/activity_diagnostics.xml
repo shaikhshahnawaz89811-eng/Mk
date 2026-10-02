@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Developer diagnostics (Spec §25): read-only, metadata only. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@drawable/bg_root">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:padding="16dp">
+
+        <ImageView
+            android:id="@+id/btnBack"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:padding="10dp"
+            android:src="@drawable/ic_back"
+            app:tint="@color/text2" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:text="Diagnostics"
+            android:textColor="@color/text1"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/btnClear"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:padding="8dp"
+            android:text="Clear"
+            android:textColor="@color/text3"
+            android:textSize="12sp" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/btnSelfTest"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="10dp"
+        android:background="@drawable/btn_primary_state"
+        android:gravity="center"
+        android:padding="11dp"
+        android:text="Run engine self-test"
+        android:textColor="#FF08131F"
+        android:textSize="13sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/textSelfTest"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="10dp"
+        android:background="@drawable/glass_card_16"
+        android:padding="14dp"
+        android:textColor="@color/text2"
+        android:textSize="12sp"
+        android:lineSpacingMultiplier="1.4"
+        android:text="Self-test not run yet — checks tools, sandbox, both engines, ZIP/PDF/XLSX/image pipelines, guards and web reachability."
+        android:visibility="visible" />
+
+    <TextView
+        android:id="@+id/textSummary"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:background="@drawable/glass_card_16"
+        android:padding="14dp"
+        android:textColor="@color/text2"
+        android:textSize="12sp"
+        android:lineSpacingMultiplier="1.3" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerDiag"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:layout_marginTop="12dp"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp" />
+</LinearLayout>

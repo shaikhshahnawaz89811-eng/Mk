@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Base -->
+    <color name="bg">#FF0A0E13</color>
+    <color name="surface">#FF0F151D</color>
+    <color name="surface2">#FF121924</color>
+    <color name="bottom_bar">#FF0A0E13</color>
+
+    <!-- Glass cards -->
+    <color name="card">#FF151D28</color>
+    <color name="card2">#FF1A2432</color>
+    <color name="card_stroke">#14FFFFFF</color>
+    <color name="card_stroke_strong">#29FFFFFF</color>
+
+    <!-- Accents -->
+    <color name="accent">#FF6EC1FF</color>
+    <color name="accent_deep">#FF2F81C4</color>
+    <color name="glow">#FF59C2FF</color>
+    <color name="accent_dim">#336EC1FF</color>
+
+    <!-- Bubbles -->
+    <color name="bubble_user">#FF1A2432</color>
+    <color name="bubble_user_stroke">#14FFFFFF</color>
+    <color name="bubble_ai">#FF121A26</color>
+
+    <!-- Text -->
+    <color name="text1">#FFE8EEF5</color>
+    <color name="text2">#FF93A1B3</color>
+    <color name="text3">#FF5D6B7C</color>
+
+    <!-- Status -->
+    <color name="success">#FF3FB950</color>
+    <color name="warn">#FFD29922</color>
+    <color name="error_bg">#FF2A1417</color>
+    <color name="error_stroke">#4DF85149</color>
+    <color name="error_text">#FFFF7B72</color>
+
+    <!-- Switch -->
+    <color name="switch_thumb_off">#FF6B7A8C</color>
+    <color name="switch_thumb_on">#FFEAF4FF</color>
+    <color name="switch_track_off">#FF232E3C</color>
+    <color name="switch_track_on">#FF2F81C4</color>
+
+    <!-- Project icon tint palette -->
+    <color name="pblue">#FF6EC1FF</color>
+    <color name="ppurple">#FFB49CFF</color>
+    <color name="pgreen">#FF7BE3A8</color>
+    <color name="porange">#FFFFB37B</color>
+    <color name="ppink">#FFFF8FB1</color>
+    <color name="pyellow">#FFFFD97B</color>
+</resources>

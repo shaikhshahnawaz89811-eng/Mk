@@ -1,0 +1,2 @@
+-keepattributes Signature
+-keep class com.codeassist.ai.data.** { *; }

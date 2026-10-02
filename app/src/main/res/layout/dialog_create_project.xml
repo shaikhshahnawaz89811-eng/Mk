@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/sheet_bg"
+    android:paddingStart="20dp"
+    android:paddingEnd="20dp"
+    android:paddingTop="14dp"
+    android:paddingBottom="24dp">
+
+    <View
+        android:layout_width="36dp"
+        android:layout_height="4dp"
+        android:layout_gravity="center_horizontal"
+        android:background="@drawable/handle_bar"
+        android:layout_marginBottom="14dp" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <FrameLayout
+            android:layout_width="46dp"
+            android:layout_height="46dp"
+            android:background="@drawable/avatar_circle">
+
+            <ImageView
+                android:layout_width="21dp"
+                android:layout_height="21dp"
+                android:layout_gravity="center"
+                android:src="@drawable/ic_cube"
+                app:tint="@color/accent" />
+        </FrameLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginStart="12dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Create Project"
+                android:textColor="@color/text1"
+                android:textSize="17sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:text="Set up your workspace with AI"
+                android:textColor="@color/text2"
+                android:textSize="12sp" />
+        </LinearLayout>
+
+        <ImageButton
+            android:id="@+id/btnClose"
+            android:layout_width="34dp"
+            android:layout_height="34dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_close"
+            android:padding="8dp"
+            app:tint="@color/text2"
+            android:contentDescription="Close" />
+    </LinearLayout>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="18dp"
+        android:text="Project Name *"
+        android:textColor="@color/text2"
+        android:textSize="12.5sp" />
+
+    <EditText
+        android:id="@+id/editName"
+        android:layout_width="match_parent"
+        android:layout_height="46dp"
+        android:layout_marginTop="6dp"
+        android:background="@drawable/field_bg"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:hint="My Awesome Project"
+        android:textColorHint="@color/text3"
+        android:textColor="@color/text1"
+        android:textSize="14sp"
+        android:singleLine="true"
+        android:maxLength="50"
+        android:inputType="textCapWords" />
+
+    <TextView
+        android:id="@+id/counterName"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:gravity="end"
+        android:text="0/50"
+        android:textColor="@color/text3"
+        android:textSize="10.5sp" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="Description (optional)"
+        android:textColor="@color/text2"
+        android:textSize="12.5sp" />
+
+    <EditText
+        android:id="@+id/editDesc"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:background="@drawable/field_bg"
+        android:padding="12dp"
+        android:hint="What is this project about?"
+        android:textColorHint="@color/text3"
+        android:textColor="@color/text1"
+        android:textSize="14sp"
+        android:minLines="2"
+        android:maxLines="4"
+        android:gravity="top"
+        android:scrollbars="vertical"
+        android:maxLength="250"
+        android:inputType="textCapSentences|textMultiLine" />
+
+    <TextView
+        android:id="@+id/counterDesc"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:gravity="end"
+        android:text="0/250"
+        android:textColor="@color/text3"
+        android:textSize="10.5sp" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:text="Choose Icon &amp; Color"
+        android:textColor="@color/text2"
+        android:textSize="12.5sp" />
+
+    <LinearLayout
+        android:id="@+id/iconRow"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginTop="10dp" />
+
+    <LinearLayout
+        android:id="@+id/colorRow"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginTop="12dp" />
+
+    <androidx.appcompat.widget.AppCompatButton
+        android:id="@+id/btnCreate"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:layout_marginTop="20dp"
+        android:background="@drawable/btn_primary_state"
+        android:text="Create Project"
+        android:textAllCaps="false"
+        android:textColor="#FFEAF6FF"
+        android:textSize="14.5sp"
+        android:textStyle="bold"
+        android:enabled="false" />
+
+</LinearLayout>

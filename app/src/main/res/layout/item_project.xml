@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:background="@drawable/glass_card_16"
+    android:padding="12dp"
+    android:layout_marginBottom="10dp">
+
+    <FrameLayout
+        android:id="@+id/iconBox"
+        android:layout_width="44dp"
+        android:layout_height="44dp"
+        android:background="@drawable/icon_box">
+
+        <ImageView
+            android:id="@+id/iconProject"
+            android:layout_width="22dp"
+            android:layout_height="22dp"
+            android:layout_gravity="center"
+            android:src="@drawable/ic_cube"
+            app:tint="@color/pblue" />
+    </FrameLayout>
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_weight="1"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_marginStart="12dp">
+
+        <TextView
+            android:id="@+id/textName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Web App"
+            android:textColor="@color/text1"
+            android:textSize="14.5sp"
+            android:textStyle="bold"
+            android:maxLines="1"
+            android:ellipsize="end" />
+
+        <TextView
+            android:id="@+id/textMeta"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="3dp"
+            android:text="2 chats · 3 files"
+            android:textColor="@color/text3"
+            android:textSize="11.5sp" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/textTime"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="6dp"
+        android:text="2h ago"
+        android:textColor="@color/text3"
+        android:textSize="11sp" />
+
+    <ImageButton
+        android:id="@+id/btnMore"
+        android:layout_width="34dp"
+        android:layout_height="34dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:src="@drawable/ic_more"
+        android:padding="7dp"
+        app:tint="@color/text3"
+        android:contentDescription="More" />
+
+</LinearLayout>

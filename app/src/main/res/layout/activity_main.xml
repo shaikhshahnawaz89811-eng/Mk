@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.drawerlayout.widget.DrawerLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/drawerLayout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/bg_root">
+
+    <!-- Main content -->
+    <FrameLayout
+        android:id="@+id/fragmentContainer"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:fitsSystemWindows="true" />
+
+    <!-- Side menu (ChatGPT / Claude style drawer) -->
+    <LinearLayout
+        android:layout_width="292dp"
+        android:layout_height="match_parent"
+        android:layout_gravity="start"
+        android:fitsSystemWindows="true"
+        android:orientation="vertical"
+        android:background="@color/surface">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:paddingTop="16dp"
+            android:paddingBottom="14dp">
+
+            <FrameLayout
+                android:layout_width="34dp"
+                android:layout_height="34dp"
+                android:background="@drawable/avatar_circle">
+
+                <ImageView
+                    android:layout_width="15dp"
+                    android:layout_height="15dp"
+                    android:layout_gravity="center"
+                    android:src="@drawable/ic_sparkle"
+                    app:tint="@color/accent" />
+            </FrameLayout>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
+                android:text="CodeAssistAI"
+                android:textColor="@color/text1"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="0.5dp"
+            android:background="@drawable/divider" />
+
+        <ScrollView
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:scrollbars="none">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingTop="6dp"
+                android:paddingBottom="18dp">
+
+                <include
+                    android:id="@+id/rowNewChat"
+                    layout="@layout/item_drawer_row" />
+
+                <include
+                    android:id="@+id/rowChats"
+                    layout="@layout/item_drawer_row" />
+
+                <include
+                    android:id="@+id/rowProjects"
+                    layout="@layout/item_drawer_row" />
+
+                <include
+                    android:id="@+id/rowModels"
+                    layout="@layout/item_drawer_row" />
+
+                <include
+                    android:id="@+id/rowDiagnostics"
+                    layout="@layout/item_drawer_row" />
+
+                <include
+                    android:id="@+id/rowSettings"
+                    layout="@layout/item_drawer_row" />
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="0.5dp"
+                    android:layout_marginTop="10dp"
+                    android:layout_marginBottom="10dp"
+                    android:background="@drawable/divider" />
+
+                <TextView
+                    android:id="@+id/labelRecent"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="18dp"
+                    android:layout_marginBottom="4dp"
+                    android:text="RECENT CHATS"
+                    android:textColor="@color/text3"
+                    android:textSize="10.5sp"
+                    android:letterSpacing="0.08"
+                    android:visibility="gone" />
+
+                <LinearLayout
+                    android:id="@+id/drawerRecent"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical" />
+            </LinearLayout>
+        </ScrollView>
+    </LinearLayout>
+
+</androidx.drawerlayout.widget.DrawerLayout>

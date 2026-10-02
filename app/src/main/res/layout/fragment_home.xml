@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@android:color/transparent">
+
+    <!-- Top bar: menu, title, new chat -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="54dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingStart="10dp"
+        android:paddingEnd="10dp">
+
+        <ImageButton
+            android:id="@+id/btnMenu"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_menu"
+            android:padding="9dp"
+            app:tint="@color/text2"
+            android:contentDescription="Menu" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center">
+
+            <TextView
+                android:id="@+id/textTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="CodeAssistAI"
+                android:textColor="@color/text1"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:maxLines="1"
+                android:ellipsize="end" />
+
+            <TextView
+                android:id="@+id/textModel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="GPT-4o"
+                android:textColor="@color/accent"
+                android:textSize="10.5sp"
+                android:visibility="gone" />
+        </LinearLayout>
+
+        <ImageButton
+            android:id="@+id/btnNewChat"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_edit"
+            android:padding="9dp"
+            app:tint="@color/text2"
+            android:contentDescription="New chat" />
+    </LinearLayout>
+
+    <!-- Body: greeting <-> messages -->
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <LinearLayout
+            android:id="@+id/greetingBox"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:padding="24dp">
+
+            <FrameLayout
+                android:layout_width="110dp"
+                android:layout_height="110dp"
+                android:background="@drawable/glow_logo">
+
+                <ImageView
+                    android:layout_width="30dp"
+                    android:layout_height="30dp"
+                    android:layout_gravity="center"
+                    android:src="@drawable/ic_sparkle"
+                    app:tint="#FFE3F2FF" />
+            </FrameLayout>
+
+            <TextView
+                android:id="@+id/textGreeting"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="26dp"
+                android:text="Good evening"
+                android:textColor="@color/text1"
+                android:textSize="27sp"
+                android:textStyle="bold"
+                android:letterSpacing="0.01" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="Turn your ideas into code"
+                android:textColor="@color/text2"
+                android:textSize="14sp" />
+        </LinearLayout>
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recyclerMessages"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:clipToPadding="false"
+            android:paddingStart="14dp"
+            android:paddingEnd="14dp"
+            android:paddingTop="8dp"
+            android:paddingBottom="14dp"
+            android:scrollbars="none"
+            android:visibility="gone" />
+
+        <ImageButton
+            android:id="@+id/btnJumpDown"
+            android:layout_width="38dp"
+            android:layout_height="38dp"
+            android:layout_gravity="bottom|end"
+            android:layout_marginEnd="16dp"
+            android:layout_marginBottom="8dp"
+            android:background="@drawable/circle_btn"
+            android:src="@drawable/ic_down"
+            android:padding="9dp"
+            app:tint="@color/text1"
+            android:elevation="4dp"
+            android:visibility="gone"
+            android:contentDescription="Scroll to bottom" />
+    </FrameLayout>
+
+    <include
+        android:id="@+id/composer"
+        layout="@layout/view_composer" />
+
+</LinearLayout>

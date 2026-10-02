@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:background="@drawable/chip_small"
+    android:paddingStart="8dp"
+    android:paddingEnd="4dp"
+    android:paddingTop="5dp"
+    android:paddingBottom="5dp"
+    android:layout_marginEnd="8dp">
+
+    <ImageView
+        android:id="@+id/iconAttach"
+        android:layout_width="14dp"
+        android:layout_height="14dp"
+        android:src="@drawable/ic_file"
+        app:tint="@color/accent" />
+
+    <TextView
+        android:id="@+id/textAttachName"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="6dp"
+        android:maxWidth="120dp"
+        android:maxLines="1"
+        android:ellipsize="middle"
+        android:text="design.png"
+        android:textColor="@color/text1"
+        android:textSize="11.5sp" />
+
+    <TextView
+        android:id="@+id/textAttachSize"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="5dp"
+        android:text="1.2 MB"
+        android:textColor="@color/text3"
+        android:textSize="10.5sp" />
+
+    <ImageButton
+        android:id="@+id/btnRemoveAttach"
+        android:layout_width="22dp"
+        android:layout_height="22dp"
+        android:layout_marginStart="4dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:src="@drawable/ic_close"
+        android:padding="5dp"
+        app:tint="@color/text3"
+        android:contentDescription="Remove" />
+
+</LinearLayout>
