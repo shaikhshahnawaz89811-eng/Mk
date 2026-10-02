@@ -147,7 +147,16 @@ class HomeFragment : Fragment(), Orchestrator.RunListener {
             send(text, atts, pendingBranchOf)
         }
         composer.setModelLabel(currentModelLabel())
-        composer.onStopClick = { activeRunId?.let { Orchestrator.stopRun(it) } }
+        composer.onStopClick = {
+            val id = activeRunId
+            if (id == null) {
+                // No run to stop: never leave a dead X button behind.
+                syncComposerMode()
+            } else {
+                Orchestrator.stopRun(id)
+                toast("Stopping… current step poora hote hi ruk jaayega")
+            }
+        }
         composer.chipModel.setOnClickListener { showModelPicker() }
         composer.chipTools.setOnClickListener { showToolsMenu() }
         composer.onTuneClick = { showTuneMenu() }
@@ -268,6 +277,9 @@ class HomeFragment : Fragment(), Orchestrator.RunListener {
                     chat?.id == chatId || (chat == null && existingChat == null)
                 )
                 if (uiStillTargetsSend) {
+                    // First message of a brand-new chat: the greeting is still showing and
+                    // the list is hidden, so the sent message would be invisible.
+                    val leavingGreeting = chat == null
                     chat = c
                     Store.activeChatId = chatId
                     messages = targetMessages
@@ -275,6 +287,7 @@ class HomeFragment : Fragment(), Orchestrator.RunListener {
                     // would render the first/newly-sent user message twice.
                     adapter.submit(messages)
                     updateTopBar()
+                    if (leavingGreeting) enterChatMode(animate = true)
                     maybeScrollEnd()
                 }
 

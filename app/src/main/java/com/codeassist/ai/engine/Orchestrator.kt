@@ -68,6 +68,8 @@ object Orchestrator {
         transition(run, RunState.STOP_REQUESTED)
         activeRuns[runId]?.stopRequested = true
         EngineStore.upsertRun(run); notifyRun(run)
+        // Best effort: interrupt a blocking on-device generation so Stop is felt quickly.
+        Llm.cancelGeneration()
         return run
     }
 
@@ -145,6 +147,11 @@ object Orchestrator {
                     EventBus.emit(run.runId, EventType.RUN_FAILED,
                         "Run into a problem", EventStatus.ERROR, detail = run.error)
                     EngineStore.upsertRun(run); notifyRun(run)
+                } else if (run.state == RunState.STOP_REQUESTED) {
+                    // Safety net: never leave a run stuck in STOP_REQUESTED.
+                    run.state = RunState.PAUSED
+                    run.updatedAt = System.currentTimeMillis()
+                    EngineStore.upsertRun(run); notifyRun(run)
                 }
             } finally {
                 activeRuns.remove(run.runId)
@@ -210,6 +217,10 @@ object Orchestrator {
 
         val answer = TaskExecutors.execute(run, routed, ctx, ::checkStop, ::interrupt)
         if (answer == null) return  // interrupted / paused — waiting for user
+        // Stop was pressed while a long step (e.g. model generation) was running:
+        // honour it now. Without this the run stayed in STOP_REQUESTED forever
+        // (VALIDATING is an illegal transition from there) and the X button never cleared.
+        if (checkStop(run)) return
 
         // --- VALIDATE + COMPLETE ---
         transition(run, RunState.VALIDATING)

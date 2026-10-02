@@ -39,6 +39,8 @@ interface GemmaRuntime {
     fun describe(): String
     fun generate(prompt: String): String?
     fun generateWithImage(imagePath: String, prompt: String): String? = null
+    /** Best-effort interrupt of an in-flight generation. Default: no-op. */
+    fun cancel() {}
     val isRealModel: Boolean
     val format: ModelFormat
     val lastError: String
@@ -117,6 +119,12 @@ class LiteRtLmRuntime : GemmaRuntime {
             engine = null
             throw IllegalStateException("LiteRT-LM initialization failed: $errorText", e)
         }
+    }
+
+    override fun cancel() {
+        val c = conversation ?: return
+        // Reflection keeps this compile-safe across litertlm versions.
+        runCatching { c.javaClass.getMethod("cancelProcess").invoke(c) }
     }
 
     override fun generate(prompt: String): String? {

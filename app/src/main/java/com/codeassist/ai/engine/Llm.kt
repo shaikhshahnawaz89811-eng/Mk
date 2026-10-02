@@ -28,6 +28,12 @@ object Llm {
 
     fun available(): Boolean = gemma() != null
 
+    /** Ask any running model to stop generating (best effort, never throws). */
+    fun cancelGeneration() {
+        runCatching { gemma()?.cancel() }
+        runCatching { coder()?.cancel() }
+    }
+
     fun unavailableReason(): String {
         val g = ModelLifecycle.gemma()
         return when (g.state) {
