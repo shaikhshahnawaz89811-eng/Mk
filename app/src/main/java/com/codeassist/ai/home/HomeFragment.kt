@@ -143,9 +143,7 @@ class HomeFragment : Fragment(), Orchestrator.RunListener {
         btnJump.setOnClickListener { scrollToEnd(smooth = true) }
 
         composer = ComposerController(view.findViewById(R.id.composer), helper) { text, atts ->
-            val branch = pendingBranchOf
-            pendingBranchOf = null
-            send(text, atts, branch)
+            send(text, atts, pendingBranchOf)
         }
         composer.setModelLabel(currentModelLabel())
         composer.onStopClick = { activeRunId?.let { Orchestrator.stopRun(it) } }
@@ -212,57 +210,119 @@ class HomeFragment : Fragment(), Orchestrator.RunListener {
     // ---------- Send + orchestrated reply ----------
 
     private fun send(text: String, atts: List<Attachment>, branchOf: String? = null) {
-        var c = chat
-        if (c == null) {
-            val title = if (text.isNotBlank()) text.take(42) else (atts.firstOrNull()?.name ?: "New chat")
-            c = Store.newChat(title)
-            chat = c
-            Store.activeChatId = c.id
-            messages = Store.messages(c.id)
-            adapter.submit(messages)
-            enterChatMode(animate = true)
-        }
-        val msg = Message(role = Role.USER, text = text, attachments = atts, branchOf = branchOf)
-        messages.add(msg)
-        c.snippet = text.ifBlank { atts.firstOrNull()?.name ?: "" }
-        c.time = System.currentTimeMillis()
-        Store.updateChat(c)
-        Store.saveMessages(c.id, messages)
-        adapter.insert(msg)
-        updateTopBar()
-        maybeScrollEnd()
-        helper.clear()
-        startRun(text, atts, c, branchOf)
+        val appCtx = context?.applicationContext ?: run { composer.finishSend(false); return }
+        val existingChat = chat
+        val parentProjectId = existingChat?.projectId ?: Store.lastProjectId
+        Thread {
+            val stagedPaths = mutableListOf<String>()
+            val stagedAttachments = mutableListOf<Attachment>()
+            var failed: String? = null
+            try {
+                for (a in atts) {
+                    val local = a.localPath?.takeIf { File(it).isFile }
+                    val path = local ?: AttachmentStore.copyToInbox(appCtx, a.uri, a.name, a.kind)
+                    if (path.isNullOrBlank()) { failed = "Couldn't read ${a.name}"; break }
+                    if (local == null) stagedPaths += path
+                    stagedAttachments += a.copy(localPath = path, size = File(path).length())
+                }
+                if (failed == null) {
+                    val total = stagedAttachments.sumOf { it.size }
+                    if (total > AttachmentHelper.MAX_TOTAL_BYTES) failed = "Total attachment size exceeds 50 MB"
+                }
+            } catch (e: Exception) {
+                failed = e.message ?: "Attachment staging failed"
+            }
+            if (failed != null) {
+                AttachmentStore.cleanupStaged(stagedPaths)
+                handler.post {
+                    // The send worker can finish after navigation/view recreation. Do not
+                    // touch a destroyed composer or call requireContext() after detach.
+                    if (view != null && isAdded) {
+                        composer.finishSend(false)
+                        toast(failed!!)
+                    }
+                }
+                return@Thread
+            }
+
+            handler.post {
+                // Attachment staging happened off the UI thread. Do not drop a valid
+                // send merely because the Fragment view was recreated while staging.
+                // Persist the target chat/message/run first; UI reconciliation is optional.
+                var c = existingChat
+                if (c == null) {
+                    val title = if (text.isNotBlank()) text.take(42) else (stagedAttachments.firstOrNull()?.name ?: "New chat")
+                    c = Store.newChat(title, parentProjectId)
+                }
+                val chatId = c!!.id
+                val targetMessages = Store.messages(chatId)
+                val msg = Message(role = Role.USER, text = text, attachments = stagedAttachments, branchOf = branchOf)
+                targetMessages.add(msg)
+                c.snippet = text.ifBlank { stagedAttachments.firstOrNull()?.name ?: "" }
+                c.time = System.currentTimeMillis()
+                Store.updateChat(c)
+                Store.saveMessages(chatId, targetMessages)
+
+                val uiStillTargetsSend = view != null && (
+                    chat?.id == chatId || (chat == null && existingChat == null)
+                )
+                if (uiStillTargetsSend) {
+                    chat = c
+                    Store.activeChatId = chatId
+                    messages = targetMessages
+                    // submit() already contains the persisted message; inserting it again
+                    // would render the first/newly-sent user message twice.
+                    adapter.submit(messages)
+                    updateTopBar()
+                    maybeScrollEnd()
+                }
+
+                val started = startRun(text, stagedAttachments, c, branchOf)
+                if (started) {
+                    // Never clear a different/recreated composer's text. Only clear the
+                    // composer that still represents this exact target chat.
+                    if (uiStillTargetsSend) {
+                        pendingBranchOf = null
+                        composer.clearAfterSend()
+                    }
+                } else if (uiStillTargetsSend) {
+                    composer.finishSend(false)
+                }
+            }
+        }.start()
     }
 
-    private fun startRun(text: String, atts: List<Attachment>, c: ChatMeta, branchOf: String?) {
-        // Attachments can be tens of MB — never copy them on the UI thread
-        // (Spec §26 responsiveness). Copy in the sandbox inbox on a worker
-        // thread, then create the run and reveal the live activity card.
-        val appCtx = context?.applicationContext ?: return
-        val chatId = c.id
-        Thread {
-            val paths = atts.mapNotNull {
-                runCatching { AttachmentStore.copyToInbox(appCtx, it.uri, it.name) }.getOrNull()
-            }
+    private fun startRun(text: String, atts: List<Attachment>, c: ChatMeta, branchOf: String?): Boolean {
+        val paths = atts.mapNotNull { it.localPath?.takeIf { p -> File(p).isFile } }
+        if (paths.size != atts.size) {
+            toast("One or more staged attachments are missing; send aborted")
+            return false
+        }
+        try {
             val run = Orchestrator.createRun(
                 message = text,
                 attachments = paths,
                 projectId = c.projectId ?: Store.lastProjectId,
-                conversationId = chatId,
+                conversationId = c.id,
                 parentRunId = branchOf
             )
             handler.post {
-                if (view == null || chat?.id != chatId) return@post
+                if (view == null || chat?.id != c.id) return@post
                 activeRunId = run.runId
                 syncComposerMode()
                 val activityMsg = Message(role = Role.AI, text = "", kind = MsgKind.ACTIVITY, runId = run.runId)
-                messages.add(activityMsg)
-                Store.saveMessages(chatId, messages)
-                adapter.insert(activityMsg)
+                if (messages.none { it.runId == run.runId && it.kind == MsgKind.ACTIVITY }) {
+                    messages.add(activityMsg)
+                    Store.saveMessages(c.id, messages)
+                    adapter.insert(activityMsg)
+                }
                 maybeScrollEnd()
             }
-        }.start()
+            return true
+        } catch (e: Exception) {
+            handler.post { toast("Couldn't start the run: ${e.message ?: "unknown error"}") }
+            return false
+        }
     }
 
     /** Run updates arrive here (engine thread) — post to UI. */
@@ -447,7 +507,7 @@ class HomeFragment : Fragment(), Orchestrator.RunListener {
                 val c = chat ?: return
                 val source = if (m.role == Role.USER) m.text
                 else messages.lastOrNull { it.role == Role.USER }?.text ?: return
-                startRun(source, emptyList(), c, m.runId)
+                startRun(source, m.attachments, c, m.runId)
             }
             "delete" -> {
                 messages.remove(m)

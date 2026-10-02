@@ -22,9 +22,13 @@ import com.codeassist.ai.data.Project
 import com.codeassist.ai.data.Role
 import com.codeassist.ai.data.Store
 import com.codeassist.ai.projects.ProjectsFragment
+import com.codeassist.ai.engine.Orchestrator
 import com.codeassist.ai.ui.AttachSheet
 import com.codeassist.ai.ui.AttachmentHelper
+import com.codeassist.ai.ui.AttachmentStore
 import com.codeassist.ai.ui.ComposerController
+import com.codeassist.ai.data.Attachment
+import java.io.File
 
 class WorkspaceActivity : AppCompatActivity() {
 
@@ -37,6 +41,7 @@ class WorkspaceActivity : AppCompatActivity() {
     private lateinit var tabs: List<TextView>
     private var tab = 0
     private val listAdapter = SimpleAdapter()
+    private lateinit var composerController: ComposerController
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -64,9 +69,12 @@ class WorkspaceActivity : AppCompatActivity() {
         )
         tabs.forEachIndexed { i, tv -> tv.setOnClickListener { selectTab(i) } }
 
+        // Keep project-file uploads separate from the chat composer attachments.
+        // Previously the composer used a different AttachmentHelper while its plus
+        // button opened the project helper, so selected attachments never reached
+        // the message/run pipeline.
         helper = AttachmentHelper(this)
         helper.onChanged = {
-            // files picked via Upload File land in the project's Files tab
             val names = helper.current.map { it.name }
             if (names.isNotEmpty()) {
                 project.files.addAll(names)
@@ -76,15 +84,13 @@ class WorkspaceActivity : AppCompatActivity() {
             }
         }
 
-        val composer = ComposerController(findViewById(R.id.composer), AttachmentHelper(this)) { text, atts ->
-            val chat = Store.newChat(text.take(42).ifBlank { "Project chat" }, project.id)
-            Store.saveMessages(chat.id, mutableListOf(Message(role = Role.USER, text = text, attachments = atts)))
-            chat.snippet = text; Store.updateChat(chat)
-            openChatInPlace(chat.id)
+        val chatAttachmentHelper = AttachmentHelper(this)
+        composerController = ComposerController(findViewById(R.id.composer), chatAttachmentHelper) { text, atts ->
+            sendProjectChat(text, atts)
         }
-        composer.hint = "Message..."
-        composer.setModelLabel(Store.model)
-        composer.onPlusClick = { AttachSheet(helper).show(supportFragmentManager, "attach") }
+        composerController.hint = "Message..."
+        composerController.setModelLabel(Store.model)
+        composer.onPlusClick = { AttachSheet(chatAttachmentHelper).show(supportFragmentManager, "chat_attach") }
 
         findViewById<View>(R.id.btnBack).setOnClickListener { finish() }
         findViewById<View>(R.id.btnMore).setOnClickListener { anchor ->
@@ -111,6 +117,70 @@ class WorkspaceActivity : AppCompatActivity() {
         findViewById<View>(R.id.btnAddInstruction).setOnClickListener { instructionDialog() }
 
         selectTab(0)
+    }
+
+    private fun sendProjectChat(text: String, atts: List<Attachment>) {
+        val appCtx = applicationContext
+        Thread {
+            val staged = mutableListOf<Attachment>()
+            val createdPaths = mutableListOf<String>()
+            var failure: String? = null
+            try {
+                for (a in atts) {
+                    val local = a.localPath?.takeIf { File(it).isFile }
+                    val path = local ?: AttachmentStore.copyToInbox(appCtx, a.uri, a.name, a.kind)
+                    if (path.isNullOrBlank()) {
+                        failure = "Couldn't read ${a.name}"
+                        break
+                    }
+                    if (local == null) createdPaths += path
+                    staged += a.copy(localPath = path, size = File(path).length())
+                }
+                if (failure == null && staged.sumOf { it.size } > AttachmentHelper.MAX_TOTAL_BYTES) {
+                    failure = "Total attachment size exceeds 50 MB"
+                }
+            } catch (e: Exception) {
+                failure = e.message ?: "Attachment staging failed"
+            }
+
+            if (failure != null) {
+                AttachmentStore.cleanupStaged(createdPaths)
+                runOnUiThread { toastMessage(failure!!) }
+                return@Thread
+            }
+
+            val chat = Store.newChat(text.take(42).ifBlank { staged.firstOrNull()?.name ?: "Project chat" }, project.id)
+            val message = Message(role = Role.USER, text = text, attachments = staged)
+            Store.saveMessages(chat.id, mutableListOf(message))
+            chat.snippet = text.ifBlank { staged.firstOrNull()?.name ?: "" }
+            Store.updateChat(chat)
+
+            var runStarted = false
+            try {
+                Orchestrator.createRun(
+                    message = text,
+                    attachments = staged.mapNotNull { it.localPath?.takeIf { p -> File(p).isFile } },
+                    projectId = project.id,
+                    conversationId = chat.id
+                )
+                runStarted = true
+            } catch (e: Exception) {
+                runOnUiThread {
+                    composerController.finishSend(false)
+                    toastMessage("Couldn't start the run: ${e.message ?: "unknown error"}")
+                }
+            }
+            if (runStarted) {
+                runOnUiThread {
+                    composerController.clearAfterSend()
+                    openChatInPlace(chat.id)
+                }
+            }
+        }.start()
+    }
+
+    private fun toastMessage(message: String) {
+        android.widget.Toast.makeText(this, message, android.widget.Toast.LENGTH_LONG).show()
     }
 
     private fun instructionDialog() {

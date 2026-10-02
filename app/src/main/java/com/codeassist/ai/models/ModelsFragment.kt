@@ -86,7 +86,7 @@ class ModelsFragment : Fragment(), ModelLifecycle.Listener {
             } ?: "coder.gguf"
         }.getOrDefault("coder.gguf")
         if (!ModelLifecycle.supportedModelFile(name, ModelLifecycle.CODER_ID)) {
-            toast("Coder Helper ke liye .gguf ya .litertlm model select karo")
+            toast("Coder Helper ke liye .gguf model select karo")
             return@registerForActivityResult
         }
         progressCoder.visibility = View.VISIBLE
@@ -266,7 +266,7 @@ class ModelsFragment : Fragment(), ModelLifecycle.Listener {
 
         coderMeta.text = when (c.state) {
             ModelState.NOT_IMPORTED ->
-                "Import a small Coder Helper model (.gguf, or .litertlm when using a LiteRT-LM helper). Gemma loads it only when a coding task needs it and unloads it afterwards. Coding implementation waits for this worker when a contract requires Coder."
+                "Import a small Coder Helper model (.gguf). Gemma loads it only when a coding task needs it and unloads it afterwards. Coding implementation waits for this worker when a contract requires Coder."
             ModelState.ERROR -> "Error: ${c.lastError}\nCoder Helper will be retried on the next eligible task. Re-import or delete."
             else -> "Imported • ${c.sizeBytes / (1024 * 1024)} MB • sha256:${c.contentHash.take(12)}\nGemma loads and unloads it automatically."
         }

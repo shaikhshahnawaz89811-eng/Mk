@@ -45,7 +45,7 @@ object IntentRouter {
     // typo/spacing tolerant normalization (Hinglish friendly)
     fun normalize(raw: String): String {
         var t = raw.lowercase().trim()
-        t = t.replace(Regex("[^a-z0-9+/._ -]"), " ")
+        t = t.replace(Regex("[^\\p{L}\\p{N}+/._ -]"), " ")
         t = t.replace(Regex("\\s+"), " ")
         // common typo/variant fixes
         val fixes = mapOf(
@@ -82,7 +82,7 @@ object IntentRouter {
         val freshness = listOf("latest", "current", "aaj", "abhi", "recent", "today",
             "2026", "naya", "new docs", "official docs").any { it in t }
         val explicitWeb = listOf("search", "web", "internet", "google", "online",
-            "dekho docs", "dekhkar", "docs dekh").any { it in t }
+            "docs dekh", "official docs").any { it in t }
 
         val scores = linkedMapOf(
             Intent.BUILD_APP to score(t, "website banao", "app banao", "android app", "game banao",
@@ -95,7 +95,7 @@ object IntentRouter {
             Intent.DOCUMENT_TASK to score(t, "pdf", "table nikalo", "spreadsheet", "csv",
                 "report banao", "document", "docx", "resume", "invoice", "extract table"),
             Intent.WEB_RESEARCH to score(t, "research", "compare", "sources", "cite",
-                "verify", "fact check", "batao kya", "explain with sources"),
+                "verify", "fact check", "explain with sources"),
             Intent.MEDIA_TASK to score(t, "animation", "video", "film", "motion",
                 "scene", "render", "animate"),
             Intent.DATA_TASK to score(t, "analyze data", "data analysis", "chart",

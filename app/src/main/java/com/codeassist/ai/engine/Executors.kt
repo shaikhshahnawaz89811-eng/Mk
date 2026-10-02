@@ -19,9 +19,10 @@ object TaskExecutors {
                 stop: StopCheck, interrupt: Interrupter): Answer? {
         return when (r.intent) {
             Intent.WEB_RESEARCH -> research(run, r, ctx, stop)
-            Intent.CODING_TASK ->
-                if (looksLikeQuestion(run.userRequest) && r.entities.isEmpty()) chat(run, r)
-                else coding(run, r, ctx, stop, interrupt)
+            // Every coding intent must enter the Gemma -> Implementation Contract -> Coder
+            // pipeline. A question-shaped coding request is still a coding task; routing it
+            // to direct Gemma chat would bypass the code-only worker.
+            Intent.CODING_TASK -> coding(run, r, ctx, stop, interrupt)
             Intent.BUILD_APP -> Builders.build(run, r, ctx, stop)
             Intent.DOCUMENT_TASK -> document(run, r, ctx, stop, interrupt)
             Intent.DATA_TASK -> data(run, r, ctx, stop, interrupt)
@@ -71,12 +72,6 @@ object TaskExecutors {
         "FULL new content of the file\n```\n" +
         "Always give the complete file, never partial snippets. After the last file add one " +
         "line: SUMMARY: <what you did>."
-
-    private fun looksLikeQuestion(raw: String): Boolean {
-        val first = IntentRouter.normalize(raw).split(" ").firstOrNull().orEmpty()
-        return first in setOf("what", "why", "how", "kya", "kyu", "kyun", "kaise", "explain",
-            "difference", "meaning", "batao")
-    }
 
     private fun chat(run: RunRecord, r: RoutedIntent): Answer {
         val hist = Llm.history(run.conversationId, run.userRequest)
@@ -194,8 +189,10 @@ object TaskExecutors {
         val weakEdit = tokens.any { it in setOf("update", "change", "feature", "header", "responsive", "theme", "add") } || "dark mode" in normalized
         if (!strongEdit && (snippetAsk || weakEdit.not())) return codeAnswer(run, stop)
 
-        var found = ctx.projectRoot ?: run.checkpoint["project_root"]?.let { File(it) }
-        if (found == null) {
+        val attachmentPaths = run.checkpoint["attachments"]?.split("|")?.filter { it.isNotBlank() } ?: emptyList()
+        val hasProjectArchive = attachmentPaths.any { it.lowercase().endsWith(".zip") && File(it).isFile }
+        var found = ctx.projectRoot ?: run.checkpoint["project_root"]?.let { File(it).takeIf(File::isDirectory) }
+        if (found == null && !hasProjectArchive) {
             val (single, many) = ProjectSystem.detectFromWorkspace()
             found = when {
                 single != null -> single
@@ -209,12 +206,14 @@ object TaskExecutors {
                 }
             }
         }
-        val root = found ?: return codeAnswer(run, stop)
-        run.checkpoint["project_root"] = root.absolutePath
-        EngineStore.upsertRun(run)
-        Sandbox.activeProjectRoot = root
+        // For ZIP-only requests, CodingPipeline owns safe extraction/project detection.
+        found?.let {
+            run.checkpoint["project_root"] = it.absolutePath
+            EngineStore.upsertRun(run)
+            Sandbox.activeProjectRoot = it
+        }
         step(run, "Coding pipeline", detail = "Gemma plan → contract → Coder → Patch Guard → validation → review → ZIP")
-        val result = CodingPipeline.run(run, ctx.copy(projectRoot = root), stop)
+        val result = CodingPipeline.run(run, ctx.copy(projectRoot = found), stop)
         if (!result.ok) {
             stepDone(run, "Coding pipeline", "FAILED • rollback=${result.details.any { it.contains("rollback") }}")
             val text = buildString {
@@ -245,20 +244,26 @@ object TaskExecutors {
             append("Task: ").append(run.userRequest)
         }
         val coderImported = CoderHelperManager.state() != ModelState.NOT_IMPORTED
-        val out = if (coderImported) {
-            run.coderSessionId = "coder-${java.util.UUID.randomUUID()}"
-            EngineStore.upsertRun(run)
-            val res = CoderHelperManager.withHelperBlocking("snippet ${run.coderSessionId}") {
-                val reply = Llm.generate(CODE_SYSTEM, prompt, preferCoder = true)
-                if (reply != null) CodingResult("success", reply)
-                else CodingResult("failed", "Coder Helper returned no output", errors = listOf(Llm.coderUnavailableReason()))
-            }
-            if (res.status == "success") res.summary else null
-        } else {
-            Llm.generate(CODE_SYSTEM, prompt)
+        // Never let Gemma silently become the coder. The two-module contract is strict: if the
+        // Coder Helper is not imported/available, report that fact instead of generating code
+        // directly from Gemma.
+        if (!coderImported) {
+            val reason = Llm.coderUnavailableReason()
+            val message = "Coder Helper is required for this code-only task.\n\n**Reason:** $reason"
+            stepDone(run, "Preparing code answer", "blocked — Coder Helper unavailable")
+            return Answer(message)
         }
-        stepDone(run, "Preparing code answer", if (out != null) "done" else "failed")
-        return Answer(out ?: Llm.notReadyMessage())
+        run.coderSessionId = "coder-${java.util.UUID.randomUUID()}"
+        EngineStore.upsertRun(run)
+        val res = CoderHelperManager.withHelperBlocking("snippet ${run.coderSessionId}") {
+            val reply = Llm.generate(CODE_SYSTEM, prompt, preferCoder = true)
+            if (reply != null) CodingResult("success", reply)
+            else CodingResult("failed", "Coder Helper returned no output", errors = listOf(Llm.coderUnavailableReason()))
+        }
+        val out = if (res.status == "success") res.summary
+        else "Coder Helper could not complete this code-only task.\n\n**Reason:** ${res.errors.joinToString("; ").ifBlank { Llm.coderUnavailableReason() }}"
+        stepDone(run, "Preparing code answer", if (res.status == "success") "done" else "failed")
+        return Answer(out)
     }
 
     // ------------------------------------------------------------------

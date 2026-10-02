@@ -51,7 +51,10 @@ object Orchestrator {
             userRequest = message
         )
         run.checkpoint["attachments"] = attachments.joinToString("|")
-        run.checkpoint["snapshot"] = "valid"
+        // Non-filesystem runs have a logical resume point. CodingPipeline later
+        // replaces this with a real filesystem checkpoint before file edits.
+        run.checkpoint["resume_mode"] = "logical"
+        run.checkpoint["snapshot"] = "logical"
         EngineStore.upsertRun(run)
         startExecution(run)
         return run
@@ -74,7 +77,7 @@ object Orchestrator {
         transition(run, RunState.DISCARDED)
         SkillRegistry.releaseAll(runId)
         activeRuns.remove(runId)
-        EventBus.emit(runId, EventType.RUN_PAUSED, "Run discarded", EventStatus.INFO,
+        EventBus.emit(runId, EventType.RUN_DISCARDED, "Run discarded", EventStatus.INFO,
             visibility = EventVisibility.DIAGNOSTIC)
         EngineStore.upsertRun(run); notifyRun(run)
         return run
@@ -86,6 +89,10 @@ object Orchestrator {
      */
     fun resumeRun(runId: String, decision: String, payload: Map<String, String> = emptyMap()): RunRecord? {
         val run = EngineStore.run(runId) ?: return null
+        // Never consume a pending interruption before proving the persisted run
+        // can actually resume. Otherwise a corrupt/missing checkpoint could
+        // silently lose the user's pending decision.
+        if (!RunGuards.canResume(run.state, run.snapshotValid())) return run
         val interruption = run.pendingInterruption
         if (interruption != null) {
             if (!RunGuards.canExecuteApproval(interruption.state, true)) return run
@@ -96,7 +103,6 @@ object Orchestrator {
             Telemetry.log("approval", "${interruption.type} -> $decision", runId.take(8))
             run.pendingInterruption = null
         }
-        if (!RunGuards.canResume(run.state, run.snapshotValid())) return run
         transition(run, RunState.RESUMED)
         run.checkpoint["resume_decision"] = decision
         run.checkpoint.putAll(payload)
@@ -122,7 +128,12 @@ object Orchestrator {
     // ------------------------------------------------------------------
 
     private fun startExecution(run: RunRecord, resumed: Boolean = false) {
-        val handle = activeRuns.getOrPut(run.runId) { RunHandle(run) }
+        val handle = RunHandle(run)
+        val existing = activeRuns.putIfAbsent(run.runId, handle)
+        if (existing != null) {
+            Telemetry.log("run", "Duplicate execution suppressed", run.runId.take(8), "warn")
+            return
+        }
         executor.execute {
             handle.thread = Thread.currentThread()
             try {
@@ -142,6 +153,10 @@ object Orchestrator {
     }
 
     private fun execute(run: RunRecord, resumed: Boolean) {
+        if (!resumed && run.state == RunState.STOP_REQUESTED) {
+            checkStop(run)
+            return
+        }
         val routed = if (resumed && run.checkpoint["intent"] != null)
             restoreRoute(run)
         else IntentRouter.route(run.userRequest, run.projectId != null,
@@ -248,7 +263,9 @@ object Orchestrator {
     private fun checkStop(run: RunRecord): Boolean {
         val handle = activeRuns[run.runId]
         if (handle?.stopRequested == true || run.state == RunState.STOP_REQUESTED) {
-            // persist durable activity + checkpoint before marking paused
+            // Complete the legal STOP_REQUESTED -> PAUSED transition explicitly.
+            if (run.state != RunState.STOP_REQUESTED) transition(run, RunState.STOP_REQUESTED)
+            if (run.state != RunState.STOP_REQUESTED) return true
             run.checkpoint["paused_at_step"] = run.currentStep
             transition(run, RunState.PAUSED)
             run.pendingInterruption = Interruption(
@@ -268,6 +285,8 @@ object Orchestrator {
     /** Resolve a pause card: Continue resumes the same run, Discard ends it. */
     fun resolvePause(runId: String, cont: Boolean) {
         val run = EngineStore.run(runId) ?: return
+        if (cont && !RunGuards.canResume(run.state, run.snapshotValid())) return
+        if (!cont && !RunGuards.canDiscard(run.state)) return
         run.pendingInterruption?.let {
             it.state = InterruptionState.RESOLVED
             it.decision = if (cont) "Continue" else "Discard"
@@ -306,8 +325,9 @@ object Orchestrator {
     private fun transition(run: RunRecord, to: RunState) {
         if (run.state == to) return
         if (!RunGuards.canTransition(run.state, to)) {
-            Telemetry.log("run", "Blocked illegal transition ${run.state} -> $to", run.runId.take(8), "warn")
-            return
+            val msg = "Illegal run transition ${run.state} -> $to"
+            Telemetry.log("run", msg, run.runId.take(8), "error")
+            throw IllegalStateException(msg)
         }
         run.state = to
         run.updatedAt = System.currentTimeMillis()

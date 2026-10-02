@@ -93,7 +93,7 @@ object ErrorClassifier {
                 ClassifiedError(
                     ErrorClass.MODEL_CRASH,
                     "Model/runtime crash",
-                    "Recover runtime; helper crash -> Gemma fallback; primary crash -> user-controlled state",
+                    "Recover runtime; helper crash -> keep code task failed and return control to Gemma/user; primary crash -> user-controlled state",
                     retryable = true, maxAttempts = 1, backoffMs = 500
                 )
 

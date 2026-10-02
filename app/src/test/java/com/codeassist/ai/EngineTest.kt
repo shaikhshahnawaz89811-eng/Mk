@@ -225,6 +225,13 @@ class IntentRouterTest {
         assertTrue("android" in IntentRouter.normalize("andriod app"))
     }
 
+    @Test fun `normalization preserves non-latin user text`() {
+        val normalized = IntentRouter.normalize("यह प्रोजेक्ट ठीक करो")
+        assertTrue(normalized.contains("यह"))
+        assertTrue(normalized.contains("प्रोजेक्ट"))
+        assertTrue(normalized.contains("ठीक"))
+    }
+
     @Test fun `website build routes to build app`() {
         val r = IntentRouter.route("mere business ke liye website banao", hasProject = false, hasAttachments = false)
         assertEquals(Intent.BUILD_APP, r.intent)
@@ -236,6 +243,11 @@ class IntentRouterTest {
         val r = IntentRouter.route("fix the crash bug in MainActivity.kt", hasProject = true, hasAttachments = false)
         assertEquals(Intent.CODING_TASK, r.intent)
         assertEquals("MainActivity.kt", r.entities["file"])
+    }
+
+    @Test fun `question-shaped coding request still stays on coding pipeline`() {
+        val r = IntentRouter.route("kaise python function likho", hasProject = false, hasAttachments = false)
+        assertEquals(Intent.CODING_TASK, r.intent)
     }
 
     @Test fun `pdf table extraction routes to document task`() {

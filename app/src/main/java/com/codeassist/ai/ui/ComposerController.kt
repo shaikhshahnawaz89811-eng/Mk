@@ -52,6 +52,7 @@ class ComposerController(
     /** Send / Stop are mutually clear (Spec §11 composer states). */
     enum class Mode { SEND, STOP }
     private var mode = Mode.SEND
+    private var sending = false
 
     fun setMode(m: Mode) {
         if (mode == m) return
@@ -90,7 +91,7 @@ class ComposerController(
             counter.visibility = View.GONE
         }
         val hasContent = !edit.text.isNullOrBlank() || helper.current.isNotEmpty()
-        val enabled = if (mode == Mode.STOP) true else hasContent && !over
+        val enabled = if (mode == Mode.STOP) true else hasContent && !over && !sending
         if (btnSend.isEnabled != enabled) {
             btnSend.isEnabled = enabled
             btnSend.animate().cancel()
@@ -121,15 +122,24 @@ class ComposerController(
     }
 
     private fun send() {
+        if (sending) return
         val text = edit.text?.toString()?.trim() ?: ""
         if (text.isEmpty() && helper.current.isEmpty()) return
         if (text.length > MAX_CHARS) return
-        val atts = helper.current.toList()
-        onSend(text, atts)
-        edit.setText("")
-        helper.current.clear()
-        renderAttachments()
+        sending = true
         refresh()
+        onSend(text, helper.current.toList())
+    }
+
+    fun clearAfterSend() {
+        edit.setText("")
+        helper.clear()
+        sending = false
+        refresh()
+    }
+
+    fun finishSend(success: Boolean) {
+        if (success) clearAfterSend() else { sending = false; refresh() }
     }
 
     fun setModelLabel(model: String) {

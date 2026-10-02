@@ -9,6 +9,7 @@ object Store {
 
     private lateinit var prefs: SharedPreferences
     private val gson = Gson()
+    private val storeLock = Any()
 
     fun init(ctx: Context) {
         if (!::prefs.isInitialized) {
@@ -68,47 +69,49 @@ object Store {
         set(v) = prefs.edit().putString("activechat", v).apply()
 
     // ---------- Projects ----------
-    fun projects(): MutableList<Project> {
-        val json = prefs.getString("projects", null) ?: return mutableListOf()
+    fun projects(): MutableList<Project> = synchronized(storeLock) {
+        val json = prefs.getString("projects", null) ?: return@synchronized mutableListOf()
         val type = object : TypeToken<MutableList<Project>>() {}.type
-        return try { gson.fromJson(json, type) } catch (e: Exception) { mutableListOf() }
+        try { gson.fromJson(json, type) } catch (_: Exception) { mutableListOf() }
     }
 
-    fun saveProjects(list: List<Project>) {
+    fun saveProjects(list: List<Project>) = synchronized(storeLock) {
         prefs.edit().putString("projects", gson.toJson(list)).apply()
     }
 
-    fun addProject(p: Project) {
+    fun addProject(p: Project) = synchronized(storeLock) {
         val list = projects()
         list.add(0, p)
         saveProjects(list)
-        lastProjectId = p.id
+        prefs.edit().putString("lastproject", p.id).apply()
     }
 
-    fun updateProject(p: Project) {
+    fun updateProject(p: Project) = synchronized(storeLock) {
         val list = projects()
         val i = list.indexOfFirst { it.id == p.id }
         if (i >= 0) { list[i] = p; saveProjects(list) }
     }
 
-    fun deleteProject(id: String) {
+    fun deleteProject(id: String) = synchronized(storeLock) {
         saveProjects(projects().filterNot { it.id == id })
     }
 
-    fun project(id: String?): Project? = projects().firstOrNull { it.id == id }
-
-    // ---------- Chats ----------
-    fun chats(): MutableList<ChatMeta> {
-        val json = prefs.getString("chats", null) ?: return mutableListOf()
-        val type = object : TypeToken<MutableList<ChatMeta>>() {}.type
-        return try { gson.fromJson(json, type) } catch (e: Exception) { mutableListOf() }
+    fun project(id: String?): Project? = synchronized(storeLock) {
+        projects().firstOrNull { it.id == id }
     }
 
-    fun saveChats(list: List<ChatMeta>) {
+    // ---------- Chats ----------
+    fun chats(): MutableList<ChatMeta> = synchronized(storeLock) {
+        val json = prefs.getString("chats", null) ?: return@synchronized mutableListOf()
+        val type = object : TypeToken<MutableList<ChatMeta>>() {}.type
+        try { gson.fromJson(json, type) } catch (_: Exception) { mutableListOf() }
+    }
+
+    fun saveChats(list: List<ChatMeta>) = synchronized(storeLock) {
         prefs.edit().putString("chats", gson.toJson(list)).apply()
     }
 
-    fun newChat(title: String, projectId: String? = null): ChatMeta {
+    fun newChat(title: String, projectId: String? = null): ChatMeta = synchronized(storeLock) {
         val chat = ChatMeta(title = title, projectId = projectId)
         val list = chats()
         list.add(0, chat)
@@ -116,36 +119,35 @@ object Store {
         if (projectId != null) {
             project(projectId)?.let { it.chats += 1; updateProject(it) }
         }
-        return chat
+        chat
     }
 
-    fun updateChat(c: ChatMeta) {
+    fun updateChat(c: ChatMeta) = synchronized(storeLock) {
         val list = chats()
         val i = list.indexOfFirst { it.id == c.id }
         if (i >= 0) { list[i] = c; saveChats(list) }
     }
 
-    fun deleteChat(id: String) {
+    fun deleteChat(id: String) = synchronized(storeLock) {
         saveChats(chats().filterNot { it.id == id })
         prefs.edit().remove("msgs_$id").apply()
-        if (activeChatId == id) activeChatId = null
+        if (activeChatId == id) prefs.edit().remove("activechat").apply()
     }
 
-    fun clearHistory() {
-        saveChats(mutableListOf())
-        prefs.all.keys.filter { it.startsWith("msgs_") }
-            .forEach { prefs.edit().remove(it).apply() }
-        activeChatId = null
+    fun clearHistory() = synchronized(storeLock) {
+        saveChats(emptyList())
+        prefs.all.keys.filter { it.startsWith("msgs_") }.forEach { prefs.edit().remove(it).apply() }
+        prefs.edit().remove("activechat").apply()
     }
 
     // ---------- Messages ----------
-    fun messages(chatId: String): MutableList<Message> {
-        val json = prefs.getString("msgs_$chatId", null) ?: return mutableListOf()
+    fun messages(chatId: String): MutableList<Message> = synchronized(storeLock) {
+        val json = prefs.getString("msgs_$chatId", null) ?: return@synchronized mutableListOf()
         val type = object : TypeToken<MutableList<Message>>() {}.type
-        return try { gson.fromJson(json, type) } catch (e: Exception) { mutableListOf() }
+        try { gson.fromJson(json, type) } catch (_: Exception) { mutableListOf() }
     }
 
-    fun saveMessages(chatId: String, list: List<Message>) {
+    fun saveMessages(chatId: String, list: List<Message>) = synchronized(storeLock) {
         prefs.edit().putString("msgs_$chatId", gson.toJson(list)).apply()
     }
 }

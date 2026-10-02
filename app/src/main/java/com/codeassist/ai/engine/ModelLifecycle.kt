@@ -148,7 +148,7 @@ object ModelLifecycle {
         val n = name.lowercase(Locale.US)
         return when (modelId) {
             GEMMA_ID -> n.endsWith(".litertlm")
-            CODER_ID -> n.endsWith(".gguf") || n.endsWith(".litertlm")
+            CODER_ID -> n.endsWith(".gguf")
             else -> n.endsWith(".litertlm") || n.endsWith(".gguf")
         }
     }
@@ -271,7 +271,6 @@ object ModelLifecycle {
     private fun modelFormat(name: String, modelId: String): ModelFormat? = when {
         modelId == GEMMA_ID && name.lowercase(Locale.US).endsWith(".litertlm") -> ModelFormat.LITERTLM
         modelId == CODER_ID && name.lowercase(Locale.US).endsWith(".gguf") -> ModelFormat.GGUF
-        modelId == CODER_ID && name.lowercase(Locale.US).endsWith(".litertlm") -> ModelFormat.LITERTLM
         else -> null
     }
 
@@ -295,11 +294,22 @@ object ModelLifecycle {
             throw Exception("File too small to be a model (${file.length()} bytes)")
         if (!supportedModelFile(name, if (format == ModelFormat.LITERTLM) GEMMA_ID else CODER_ID))
             throw Exception("Unsupported model file")
-        if (format == ModelFormat.GGUF) {
-            file.inputStream().use { input ->
-                val magic = ByteArray(4)
-                if (input.read(magic) != 4 || String(magic, Charsets.US_ASCII) != "GGUF")
-                    throw Exception("Invalid GGUF file header")
+        file.inputStream().use { input ->
+            val magic = ByteArray(8)
+            val read = input.read(magic)
+            when (format) {
+                ModelFormat.GGUF -> {
+                    if (read < 4 || String(magic, 0, 4, Charsets.US_ASCII) != "GGUF")
+                        throw Exception("Invalid GGUF file header")
+                }
+                ModelFormat.LITERTLM -> {
+                    if (read < 7 || String(magic, 0, 7, Charsets.US_ASCII) != "LITERTL")
+                        throw Exception("Invalid LiteRT-LM file header")
+                    // The eighth byte is the M in the LITERTLM magic.
+                    if (read < 8 || magic[7].toInt().toChar() != 'M')
+                        throw Exception("Invalid LiteRT-LM file header")
+                }
+                else -> Unit
             }
         }
     }
@@ -326,12 +336,14 @@ object ModelLifecycle {
                 rec.format = rec.format.takeIf { it != ModelFormat.UNKNOWN }
                     ?: ModelFormat.fromPath(file.name)
                 if (rec.format == ModelFormat.UNKNOWN || rec.format == ModelFormat.UNSUPPORTED)
-                    throw Exception("Unsupported model format — import a .litertlm Gemma or GGUF Coder Helper")
+                    throw Exception("Unsupported model format — import a valid .litertlm Gemma model or GGUF Coder Helper")
                 if (modelId == GEMMA_ID && rec.format != ModelFormat.LITERTLM)
                     throw Exception("Gemma 4 E4B IT must use a .litertlm runtime-backed model")
-                if (modelId == CODER_ID && rec.format !in setOf(ModelFormat.GGUF, ModelFormat.LITERTLM))
-                    throw Exception("Coder Helper format has no compatible runtime")
+                if (modelId == CODER_ID && rec.format != ModelFormat.GGUF)
+                    throw Exception("Coder Helper must use a GGUF coding model")
 
+                post { onProgress("Verifying model header…") }
+                verifyManifest(file, file.name, rec.format)
                 post { onProgress("Verifying integrity…") }
                 verifyIntegrity(rec)
 

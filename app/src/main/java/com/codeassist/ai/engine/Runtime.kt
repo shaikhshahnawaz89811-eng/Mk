@@ -87,7 +87,8 @@ class LiteRtLmRuntime : GemmaRuntime {
             // invent extra model files beside the imported .litertlm.
             val cfg = EngineConfig(
                 modelPath = file.absolutePath,
-                backend = backend
+                backend = backend,
+                visionBackend = Backend.CPU()
             )
             val e = Engine(cfg)
             e.initialize()
@@ -144,8 +145,9 @@ class LiteRtLmRuntime : GemmaRuntime {
             errorText = ""
             c.sendMessage(
                 Contents.of(
-                    Content.ImageFile(image.absolutePath),
-                    Content.Text(prompt)
+                    // LiteRT-LM multimodal contract: text must precede media.
+                    Content.Text(prompt),
+                    Content.ImageFile(image.absolutePath)
                 ),
                 maxOutputToken = 4096
             ).toString().trim().takeIf { it.isNotBlank() }
@@ -172,15 +174,17 @@ class LiteRtLmRuntime : GemmaRuntime {
     private fun selectBackend(file: File): Backend {
         // GPU is opt-in for model files explicitly marked -gpu; generic models
         // start with CPU for the broadest device compatibility.
-        return if (file.nameWithoutExtension.lowercase().endsWith("-gpu")) Backend.GPU else Backend.CPU
+        return if (file.nameWithoutExtension.lowercase().endsWith("-gpu")) Backend.GPU()
+        else Backend.CPU(threadCount = Runtime.getRuntime().availableProcessors().coerceIn(2, 4))
     }
 
     private fun unwrapError(t: Throwable): String {
-        var cur: Throwable? = t
-        repeat(4) {
-            if (cur?.cause != null) cur = cur?.cause else return@repeat
+        var cur: Throwable = t
+        repeat(8) {
+            val next = cur.cause ?: return@repeat
+            cur = next
         }
-        return (cur?.message ?: t.message ?: t.javaClass.simpleName).take(320)
+        return (cur.message ?: t.message ?: t.javaClass.simpleName).take(320)
     }
 }
 

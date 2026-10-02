@@ -34,6 +34,7 @@ enum class EventType {
     EVIDENCE_REQUIRED,
     WAITING_FOR_USER,
     RUN_PAUSED,
+    RUN_DISCARDED,
     RUN_RESUMED,
     RUN_COMPLETED,
     RUN_FAILED,

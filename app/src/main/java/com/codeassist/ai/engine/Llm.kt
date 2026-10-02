@@ -54,7 +54,7 @@ object Llm {
         val c = ModelLifecycle.coder()
         return when (c.state) {
             ModelState.NOT_IMPORTED ->
-                "Coder Helper import nahi hua hai. Models screen se supported .gguf ya .litertlm helper import karo."
+                "Coder Helper import nahi hua hai. Models screen se supported .gguf coding helper import karo."
             ModelState.IMPORTED_UNLOADED ->
                 "Coder Helper import hai par abhi load nahi hua."
             ModelState.LOADING, ModelState.IMPORTING ->

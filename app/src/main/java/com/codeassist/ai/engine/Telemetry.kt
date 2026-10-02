@@ -38,7 +38,7 @@ object Telemetry {
             EventType.ARTIFACT_READY -> "artifact"
             EventType.CODER_STATUS, EventType.FALLBACK -> "coder"
             EventType.RUN_STARTED, EventType.RUN_COMPLETED, EventType.RUN_FAILED,
-            EventType.RUN_PAUSED, EventType.RUN_RESUMED -> "run"
+            EventType.RUN_PAUSED, EventType.RUN_DISCARDED, EventType.RUN_RESUMED -> "run"
             else -> "activity"
         }
         add(Entry(kind = kind, label = e.title, detail = sanitize(e.detail),

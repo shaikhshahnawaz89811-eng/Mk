@@ -156,7 +156,12 @@ class MessagesAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
                         val root = LayoutInflater.from(ctx)
                             .inflate(R.layout.item_attachment_msg, attachBox, false)
                         val iv = root.findViewById<ImageView>(R.id.imageAttach)
-                        try { iv.setImageURI(Uri.parse(a.uri)) } catch (_: Exception) {
+                        try {
+                            val imageUri = a.localPath?.takeIf { java.io.File(it).isFile }?.let {
+                                Uri.fromFile(java.io.File(it))
+                            } ?: Uri.parse(a.uri)
+                            iv.setImageURI(imageUri)
+                        } catch (_: Exception) {
                             iv.setImageResource(R.drawable.ic_image)
                         }
                         attachBox.addView(root)
@@ -296,11 +301,12 @@ class MessagesAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
             val last = events.last()
             /* EventType shortcuts below use full path */
             runActive = last.type != com.codeassist.ai.engine.EventType.RUN_COMPLETED && last.type != com.codeassist.ai.engine.EventType.RUN_FAILED &&
-                last.type != com.codeassist.ai.engine.EventType.RUN_PAUSED && last.type != com.codeassist.ai.engine.EventType.WAITING_FOR_USER
+                last.type != com.codeassist.ai.engine.EventType.RUN_PAUSED && last.type != com.codeassist.ai.engine.EventType.RUN_DISCARDED && last.type != com.codeassist.ai.engine.EventType.WAITING_FOR_USER
             headlineBase = when (last.type) {
                 com.codeassist.ai.engine.EventType.RUN_COMPLETED -> "Done ✓"
                 com.codeassist.ai.engine.EventType.RUN_FAILED -> "Ran into a problem"
                 com.codeassist.ai.engine.EventType.RUN_PAUSED -> "Work paused"
+                com.codeassist.ai.engine.EventType.RUN_DISCARDED -> "Run discarded"
                 com.codeassist.ai.engine.EventType.WAITING_FOR_USER -> "Waiting for your input"
                 com.codeassist.ai.engine.EventType.SEARCH_STARTED, com.codeassist.ai.engine.EventType.SEARCH_SOURCE_ADDED, com.codeassist.ai.engine.EventType.SOURCE_VERIFIED -> "Searching the web"
                 com.codeassist.ai.engine.EventType.CONTEXT_LOADED -> "Reading project context"

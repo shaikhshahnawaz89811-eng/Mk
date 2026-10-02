@@ -54,11 +54,11 @@ dependencies {
     implementation 'androidx.recyclerview:recyclerview:1.3.2'
     implementation 'androidx.activity:activity-ktx:1.9.3'
     implementation 'androidx.fragment:fragment-ktx:1.8.5'
-    implementation 'com.google.code.gson:gson:2.11.0'
+    implementation 'com.google.code.gson:gson:2.14.0'
     // Gemma 4 E4B IT .litertlm runtime
     implementation 'com.google.ai.edge.litertlm:litertlm-android:0.17.1'
     // GGUF Coder Helper runtime (llama.cpp, arm64-v8a)
     implementation 'dev.ffmpegkit-maintained:llama-android:0.1.1'
-    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2'
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.11.0'
     testImplementation 'junit:junit:4.13.2'
 }

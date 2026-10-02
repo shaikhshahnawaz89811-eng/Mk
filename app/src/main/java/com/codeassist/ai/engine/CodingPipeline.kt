@@ -365,8 +365,9 @@ object AttachmentAnalyzer {
     fun prepare(run: RunRecord, workspace: WorkspaceManager.PreparedWorkspace): String {
         val pieces = mutableListOf<String>()
         for (pdf in workspace.pdfs) {
+            var pdfError: String? = null
             val evidence = runCatching { PdfExtractTool.extractStructured(pdf.readBytes()) }
-                .getOrElse { PdfStructureEvidence("", emptyList(), emptyList(), emptyList(), false) }
+                .getOrElse { pdfError = it.message ?: "PDF extraction failed"; PdfStructureEvidence("", emptyList(), emptyList(), emptyList(), false) }
             val pageDir = File(workspace.runRoot, "pdf-pages/${pdf.nameWithoutExtension}").apply { mkdirs() }
             val rendered = renderPdfPages(pdf, pageDir, 12)
             pieces += "SOURCE=${pdf.name}; type=PDF; pages_rendered=${rendered.size}; provenance=source=${pdf.name}; section=document"
@@ -374,6 +375,7 @@ object AttachmentAnalyzer {
             pieces += "PDF_HEADINGS ${pdf.name}:\n${evidence.headings.joinToString("\n") { "source=${pdf.name}; section=$it" }.ifBlank { "none" }}"
             pieces += "PDF_TABLE_LIKE ${pdf.name}:\n${evidence.tableLikeLines.joinToString("\n") { "source=${pdf.name}; section=table-like; $it" }.ifBlank { "none" }}"
             pieces += "PDF_CODE_LIKE ${pdf.name}:\n${evidence.codeLikeLines.joinToString("\n") { "source=${pdf.name}; section=code-like; $it" }.ifBlank { "none" }}"
+            if (pdfError != null) pieces += "PDF_EXTRACT_ERROR source=${pdf.name}: ${pdfError}"
             pieces += "PDF_PAGE_IMAGES ${pdf.name}: ${rendered.mapIndexed { i, f -> "source=${pdf.name}; page=${i + 1}; file=${f.relativeTo(workspace.runRoot).path}" }.joinToString("\n")}"
             if (Llm.available()) {
                 for ((i, page) in rendered.take(4).withIndex()) {

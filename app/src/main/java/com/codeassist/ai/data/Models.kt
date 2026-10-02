@@ -9,7 +9,8 @@ data class Attachment(
     val name: String,
     val size: Long,
     val mime: String,
-    val kind: AttachKind
+    val kind: AttachKind,
+    val localPath: String? = null
 )
 
 enum class Role { USER, AI }

@@ -151,7 +151,7 @@ object RunGuards {
      * RUNNING -> STOP_REQUESTED -> PAUSED -> RESUMED | DISCARDED
      */
     fun canTransition(from: RunState, to: RunState): Boolean = when (from) {
-        RunState.QUEUED -> to == RunState.UNDERSTANDING || to == RunState.DISCARDED
+        RunState.QUEUED -> to == RunState.UNDERSTANDING || to == RunState.STOP_REQUESTED || to == RunState.DISCARDED
         RunState.UNDERSTANDING -> to == RunState.PLANNING || to == RunState.FAILED ||
             to == RunState.STOP_REQUESTED || to == RunState.INTERRUPTED
         RunState.PLANNING -> to == RunState.RUNNING || to == RunState.FAILED ||

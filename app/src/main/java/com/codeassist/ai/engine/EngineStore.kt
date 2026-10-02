@@ -18,6 +18,7 @@ object EngineStore {
 
     private lateinit var prefs: SharedPreferences
     private val gson = Gson()
+    private val storeLock = Any()
 
     fun init(ctx: Context) {
         if (!::prefs.isInitialized) {
@@ -38,39 +39,38 @@ object EngineStore {
 
     // ---------- Model registry (Spec §22) ----------
     fun modelRecords(): MutableList<ModelRecord> = readList("model_registry")
-    fun saveModelRecords(list: List<ModelRecord>) = writeList("model_registry", list)
+    fun saveModelRecords(list: List<ModelRecord>) = synchronized(storeLock) { writeList("model_registry", list) }
 
     fun modelRecord(modelId: String): ModelRecord? = modelRecords().firstOrNull { it.modelId == modelId }
 
-    fun upsertModelRecord(rec: ModelRecord) {
-        val list = modelRecords()
+    fun upsertModelRecord(rec: ModelRecord) = synchronized(storeLock) {
+        val list = readList<ModelRecord>("model_registry")
         val i = list.indexOfFirst { it.modelId == rec.modelId }
         if (i >= 0) list[i] = rec else list.add(rec)
-        saveModelRecords(list)
+        writeList("model_registry", list)
     }
 
-    fun removeModelRecord(modelId: String) {
-        saveModelRecords(modelRecords().filterNot { it.modelId == modelId })
+    fun removeModelRecord(modelId: String) = synchronized(storeLock) {
+        writeList("model_registry", readList<ModelRecord>("model_registry").filterNot { it.modelId == modelId })
     }
 
     // ---------- Runs (Spec §22 run record) ----------
     fun runs(): MutableList<RunRecord> = readList("runs")
-    fun saveRuns(list: List<RunRecord>) = writeList("runs", list)
+    fun saveRuns(list: List<RunRecord>) = synchronized(storeLock) { writeList("runs", list) }
 
     fun run(runId: String): RunRecord? = runs().firstOrNull { it.runId == runId }
 
-    fun upsertRun(run: RunRecord) {
+    fun upsertRun(run: RunRecord) = synchronized(storeLock) {
         run.updatedAt = System.currentTimeMillis()
-        val list = runs()
+        val list = readList<RunRecord>("runs")
         val i = list.indexOfFirst { it.runId == run.runId }
         if (i >= 0) list[i] = run else list.add(0, run)
-        // keep the store bounded
         if (list.size > 200) list.subList(200, list.size).clear()
-        saveRuns(list)
+        writeList("runs", list)
     }
 
-    fun removeRun(runId: String) {
-        saveRuns(runs().filterNot { it.runId == runId })
+    fun removeRun(runId: String) = synchronized(storeLock) {
+        writeList("runs", readList<RunRecord>("runs").filterNot { it.runId == runId })
     }
 
     // ---------- Activity events (bounded ring) ----------
@@ -79,7 +79,7 @@ object EngineStore {
         return if (runId == null) all else all.filter { it.runId == runId }.toMutableList()
     }
 
-    fun appendEvent(e: ActivityEvent) {
+    fun appendEvent(e: ActivityEvent) = synchronized(storeLock) {
         val list: MutableList<ActivityEvent> = readList("activity_events")
         list.add(e)
         if (list.size > 1500) list.subList(0, list.size - 1500).clear()
@@ -159,6 +159,7 @@ data class RunRecord(
 ) {
     fun snapshotValid(): Boolean {
         if (conversationId.isBlank() || checkpoint["snapshot"] == "corrupt") return false
+        if (checkpoint["resume_mode"] != "filesystem") return checkpoint["snapshot"] == "logical" || checkpoint["snapshot"] == "valid"
         val path = checkpoint.entries.firstOrNull { it.key.startsWith("checkpoint_") && it.value.isNotBlank() }?.value
         return path?.let { File(it).exists() } == true
     }
