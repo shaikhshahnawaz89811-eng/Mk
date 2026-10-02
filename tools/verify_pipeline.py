@@ -37,7 +37,7 @@ for wf in (ROOT/'.github/workflows').rglob('*.yml'):
 root_build=read(Path('build.gradle')); wrap=read(Path('gradle/wrapper/gradle-wrapper.properties'))
 require("com.android.application' version '8.5.2'" in root_build, 'AGP 8.5.2 missing')
 require("org.jetbrains.kotlin.android' version '2.4.20'" in root_build, 'KGP 2.4.20 missing')
-require('gradle-8.7-bin.zip' in wrap, 'Gradle 8.7 wrapper missing')
+require('gradle-8.14.4-bin.zip' in wrap, 'Gradle 8.14.4 wrapper missing')
 require('.kotlin/' in read(Path('.gitignore')), '.kotlin/ must be ignored')
 
 # Runtime

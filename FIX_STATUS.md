@@ -12,7 +12,7 @@ Legend: [x] fixed in this source ZIP, [~] locally inspected but requires remote/
 |---|---|---|---|
 | P01 | GitHub Actions used `setup-android@v3` / interactive license prompt in the failing run | [x] | CI pinned to `setup-android@v4`, automatic non-interactive license acceptance enabled; no `sdkmanager --licenses` prompt remains |
 | P02 | CI disabled license acceptance and then invoked an interactive license command | [x] | Removed the manual interactive step; exact SDK packages are installed by the action |
-| P03 | Gradle/Kotlin toolchain mismatch risk: AGP 8.5.2 + KGP 1.9.24 | [x] | KGP updated to 2.4.20; wrapper remains Gradle 8.7 |
+| P03 | Gradle/Kotlin toolchain mismatch risk: AGP 8.5.2 + KGP 2.4.20 with deprecated Gradle 8.7 | [x] | KGP 2.4.20 retained; wrapper updated to Gradle 8.14.4 |
 | P04 | Gemma `.litertlm` needed LiteRT-LM runtime | [x] | Gemma runtime uses LiteRT-LM `Engine`/`Conversation` |
 | P05 | LiteRT-LM backend constructor was using outdated object syntax | [x] | Uses `Backend.CPU()` / `Backend.GPU()` |
 | P06 | Imported Gemma could be treated as loaded without real inference | [x] | `LOADED` only after native engine + end-to-end probe; failures become ERROR |
@@ -108,7 +108,7 @@ The failing log showed an interactive `sdkmanager --licenses` prompt. The repair
 
 Current action documentation states that `setup-android` accepts Android SDK licenses and that `accept-android-sdk-licenses` defaults to true; the maintained README also documents `@v4` and package installation. citeturn585029search0turn585029search1
 
-The source also aligns KGP 2.4.20 with AGP 8.5.2 and Gradle 8.7; Kotlin's current compatibility table lists AGP 8.5.2–9.3.1 and Gradle 7.6.3–9.7.0 for KGP 2.4.20. citeturn585029search2
+The source aligns KGP 2.4.20 with AGP 8.5.2 and Gradle 8.14.4; Kotlin's current compatibility table lists AGP 8.5.2–9.3.1 and Gradle 7.6.3–9.7.0 for KGP 2.4.20. citeturn585029search2
 
 ## Gemma runtime verification basis
 
@@ -156,3 +156,33 @@ This implements the separation described in the supplied research PDF: Gemma = W
 
 ### CI verification state
 [~] Remote GitHub Actions execution is still required. Local YAML + structural checks pass. No remote PASS is fabricated.
+
+## Re-audit compile failure correction — GitHub log 2026-10-02
+
+### P40 — HomeFragment missing java.io.File import
+[x] Fixed. `HomeFragment.kt` uses `File(...)` in attachment staging and run creation; the import was missing, causing the exact `Unresolved reference 'File'` errors at lines 222, 226 and 296.
+
+### P41 — WorkspaceActivity referenced nonexistent `composer`
+[x] Fixed. The activity declares `composerController`; the plus-button handler was incorrectly attached to `composer`. It now attaches to `composerController`, removing the exact `Unresolved reference 'composer'` error at line 93.
+
+### P42 — Deprecated Gradle 8.7 warning with Kotlin 2.4.20
+[x] Fixed. Gradle wrapper updated from 8.7 to 8.14.4, matching the minimum Gradle version reported by the Kotlin plugin warning in the supplied CI log.
+
+### Verification after P40–P42
+[~] Local Android Gradle execution still requires the Gradle/dependency distribution network, which is unavailable in this environment. The exact compiler errors from the supplied CI log were corrected at source level. Static source scans show no remaining `File(...)` usages without `java.io.File` import in the affected HomeFragment and no remaining `composer.` reference in WorkspaceActivity.
+
+### P43 — Manifest-referenced SkillBuildActivity was missing
+[x] Fixed. The manifest and CreateProjectDialog referenced `com.codeassist.ai.build.SkillBuildActivity`, but the class was absent from the source tree. This would have become the next Android compilation failure after P40/P41. A real activity was restored using the existing `activity_skill_build.xml`; it prepares the coding/android skills and then opens the real project workspace without claiming that source code was built.
+
+### P44 — SkillBuildActivity layout referenced missing GlowArcView
+[x] Fixed. The existing `activity_skill_build.xml` referenced `com.codeassist.ai.build.GlowArcView`, but that custom view class was also absent. A lightweight Android `View` implementation was restored.
+
+### P45 — CI verifier still expected the old Gradle 8.7 wrapper
+[x] Fixed. `tools/verify_pipeline.py` now requires Gradle 8.14.4, matching the wrapper and the Kotlin 2.4.20 warning shown by the actual GitHub Actions compiler log.
+
+### P40–P45 verification
+[x] Exact reported Kotlin errors corrected.
+[x] Manifest class scan: PASS.
+[x] Custom XML view class scan: PASS.
+[x] Offline structural pipeline verifier: PASS.
+[~] Full Android compilation/unit tests/lint remain remote-runner verification because this environment cannot download the Gradle/dependency distributions.

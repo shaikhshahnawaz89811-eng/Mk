@@ -90,7 +90,7 @@ class WorkspaceActivity : AppCompatActivity() {
         }
         composerController.hint = "Message..."
         composerController.setModelLabel(Store.model)
-        composer.onPlusClick = { AttachSheet(chatAttachmentHelper).show(supportFragmentManager, "chat_attach") }
+        composerController.onPlusClick = { AttachSheet(chatAttachmentHelper).show(supportFragmentManager, "chat_attach") }
 
         findViewById<View>(R.id.btnBack).setOnClickListener { finish() }
         findViewById<View>(R.id.btnMore).setOnClickListener { anchor ->

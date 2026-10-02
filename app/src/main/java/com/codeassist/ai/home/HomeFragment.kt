@@ -43,6 +43,7 @@ import com.codeassist.ai.ui.AttachSheet
 import com.codeassist.ai.ui.AttachmentHelper
 import com.codeassist.ai.ui.AttachmentStore
 import com.codeassist.ai.ui.ComposerController
+import java.io.File
 
 /**
  * Home = the chat itself (ChatGPT / Claude mobile pattern), wired to the
